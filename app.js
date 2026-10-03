@@ -233,6 +233,10 @@ import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/
   function renderEditor() {
     const project = activeProject();
     if (!project) { setView("projects"); return; }
+    if (project.spec.generatedHtml) {
+      content.innerHTML = `<section class="editor-topline"><div><button class="text-button" data-view="projects">← Projects</button><span class="editor-divider">/</span><strong>${escapeHtml(project.name)}</strong><span class="save-indicator"><i></i> Saved locally</span></div><div class="editor-actions"><button class="button button-small button-outline" data-view="preview">Preview ↗</button></div></section><div class="preview-frame-wrap"><iframe class="preview-frame" title="${escapeHtml(project.name)} generated website" sandbox="allow-scripts allow-forms" srcdoc="${escapeHtml(project.spec.generatedHtml)}"></iframe></div>`;
+      return;
+    }
     if (!editorHistory.has(project.id)) editorHistory.set(project.id, { past: [], future: [], last: JSON.stringify(project.spec) });
     const page = project.spec.pages[0];
     selectedSection = Math.min(selectedSection, page.sections.length - 1);
@@ -269,17 +273,8 @@ import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/
     content.innerHTML = `<section class="page-heading"><div><div class="eyebrow">PROJECT HISTORY</div><h1>Version history</h1><p>Restore a saved snapshot without losing the current draft.</p></div>${project ? `<button class="button button-primary" data-action="save-version">＋ Save version</button>` : ""}</section>${project ? `<div class="history-project">Current project <strong>${escapeHtml(project.name)}</strong></div>${versions.length ? `<div class="version-list">${versions.map((version, index) => `<article class="version-row"><span class="version-number">v${versions.length - index}</span><div class="version-info"><strong>${escapeHtml(version.label)}</strong><span>${new Date(version.createdAt).toLocaleString()}</span></div><button class="button button-small button-outline" data-restore-version="${version.id}">Restore</button></article>`).join("")}</div>` : `<div class="empty-state"><h3>No saved versions yet.</h3><p>Save a project version from the editor to keep a restore point.</p><button class="button button-secondary" data-view="editor">Open editor</button></div>`}` : `<div class="empty-state"><h3>Choose a project first.</h3><p>Version history belongs to an individual project.</p><button class="button button-secondary" data-view="projects">Browse projects</button></div>`}`;
   }
 
-  function getAiApiKey() {
-    try { return localStorage.getItem("buildflow.openaiKey") || ""; } catch { return ""; }
-  }
-
-  function setAiApiKey(value) {
-    try { localStorage.setItem("buildflow.openaiKey", value); } catch (error) { console.warn("Could not store OpenAI key locally:", error); }
-  }
-
   function renderAssistant() {
-    const savedKey = getAiApiKey() || GROQ_API_KEY;
-    content.innerHTML = `<section class="page-heading"><div><div class="eyebrow">AI WEBSITE BUILDER</div><h1>AI assistant</h1><p>Use your Groq key in the browser to generate a real custom website from your prompt.</p></div></section><div class="integration-panel"><div class="integration-icon">✳</div><div><h2>Browser-based AI</h2><p>This version works without Node or Firebase Functions. The Groq key is ready below and generates a custom site from text.</p></div><span class="status-pill status-ready">DEMO MODE</span></div>${activeProject() ? `<div class="assistant-form"><label class="field-label">Groq API key<input id="ai-key" type="password" value="${escapeHtml(savedKey)}" placeholder="gsk-..." /></label><label class="field-label">Ask for a website draft<input id="ai-prompt" placeholder="Build a modern bakery site with a seasonal menu..." /></label><button class="button button-primary" data-action="generate-ai">Generate with AI</button><p>For school projects only. This key is stored in your browser and is not production-safe.</p></div>` : ""}`;
+    content.innerHTML = `<section class="page-heading"><div><div class="eyebrow">AI WEBSITE BUILDER</div><h1>AI assistant</h1><p>Describe the website you want and I’ll build an editable draft.</p></div><span class="status-pill status-ready">READY</span></section><div class="assistant-form"><div class="integration-panel"><div class="integration-icon">✳</div><div><h2>What should we build?</h2><p>Tell me about the style, pages, features, and audience. I’ll turn your message into a website draft.</p></div></div><label class="field-label" for="ai-prompt">Your message<textarea id="ai-prompt" rows="5" placeholder="Build a modern bakery website with a seasonal menu, warm colors, opening hours, and an online order button..."></textarea></label><button class="button button-primary" data-action="generate-ai">Build website</button></div>`;
   }
 
   function renderAdmin() {
@@ -335,6 +330,10 @@ import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/
   function renderPreview() {
     const project = activeProject();
     if (!project) { setView("projects"); return; }
+    if (project.spec.generatedHtml) {
+      content.innerHTML = `<section class="page-heading"><div><div class="eyebrow">AI-GENERATED WEBSITE</div><h1>${escapeHtml(project.name)}</h1><p>Custom HTML, CSS, and JavaScript generated from your prompt.</p></div><div class="heading-actions"><button class="button button-outline" data-view="editor">← Back to editor</button><button class="button button-outline" data-action="open-preview">Open tab ↗</button></div></section><div class="preview-frame-wrap"><iframe class="preview-frame" title="${escapeHtml(project.name)} website preview" sandbox="allow-scripts allow-forms" srcdoc="${escapeHtml(project.spec.generatedHtml)}"></iframe></div>`;
+      return;
+    }
     const page = project.spec.pages[0];
     const sections = page.sections.map((section) => `<section class="preview-section"><small>${escapeHtml(section.type)}</small><h2>${escapeHtml(section.title)}</h2><p>${escapeHtml(section.text || "")}</p>${section.button ? `<a href="#contact">${escapeHtml(section.button)} →</a>` : ""}</section>`).join("");
     const documentHtml = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><style>*{box-sizing:border-box}body{margin:0;background:${escapeHtml(project.spec.theme.background)};color:${escapeHtml(project.spec.theme.foreground)};font:16px 'DM Sans',sans-serif}.nav{height:72px;display:flex;align-items:center;justify-content:space-between;padding:0 8%;border-bottom:1px solid #0001}.nav b{font-size:19px}.nav span{font-size:13px}.hero{padding:110px 12% 92px;background:linear-gradient(145deg,${escapeHtml(project.spec.theme.background)},${escapeHtml(project.spec.theme.accent)}22)}.preview-section{padding:70px 12%;border-bottom:1px solid #0001}.preview-section small{color:${escapeHtml(project.spec.theme.accent)};text-transform:uppercase;letter-spacing:1px}.preview-section h1,.preview-section h2{font-size:clamp(32px,6vw,68px);line-height:1.05;max-width:760px;margin:18px 0}.preview-section p{max-width:560px;line-height:1.7;opacity:.72}.preview-section a{display:inline-block;background:${escapeHtml(project.spec.theme.accent)};color:white;padding:14px 20px;text-decoration:none;margin-top:14px}.footer{padding:34px 12%;font-size:13px;opacity:.7}</style></head><body><header class="nav"><b>${escapeHtml(project.name)}</b><span>About　 Services　 Contact</span></header><main class="hero">${sections}</main><footer class="footer">${escapeHtml(project.name)} · Thoughtfully made.</footer></body></html>`;
@@ -570,10 +569,9 @@ import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/
 
   async function generateWithAI(promptOverride = "") {
     const prompt = promptOverride || $("#ai-prompt")?.value.trim();
-    const apiKey = $("#ai-key")?.value.trim() || getAiApiKey() || GROQ_API_KEY;
-    if (!apiKey) { toast("Add your Groq API key first.", "error"); return; }
+    const apiKey = GROQ_API_KEY;
+    if (!apiKey) { toast("The AI key is not configured in app.js.", "error"); return; }
     if (!prompt) { toast("Add a short description first.", "error"); return; }
-    setAiApiKey(apiKey);
     toast("Generating your website from the prompt…");
     try {
       const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -583,13 +581,13 @@ import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/
           Authorization: `Bearer ${apiKey}`,
         },
         body: JSON.stringify({
-          model: "llama-3.1-8b-instant",
+            model: "openai/gpt-oss-20b",
+            max_completion_tokens: 6000,
           messages: [
-            { role: "system", content: "You are a senior web designer. Return only valid JSON with a structure: { name, description, theme: { background, foreground, accent, font }, pages: [{ name, slug, sections: [{ type, title, text, button }] }] }. Keep the output compact but realistic. Use only valid hex colors."
-            },
-            { role: "user", content: `Generate a website for this idea: ${prompt}` }
+              { role: "system", content: "You are an expert web designer and front-end developer. Build a genuinely custom, polished, responsive website based on the user's exact brief. Return only a complete standalone HTML document, from <!doctype html> through </html>, with all CSS in a style element and any needed JavaScript in a script element. Do not return JSON, markdown fences, explanations, templates, or placeholder copy. Create a distinctive layout, typography, colors, navigation, sections, and interactions suited to this specific brief. Include real copy relevant to the business and working client-side interactions. Use no frameworks, build tools, or external JavaScript libraries. Keep the code concise enough to fit in the response."
+              },
+              { role: "user", content: `Create the complete website now. Follow this brief closely:\n\n${prompt}` }
           ],
-          temperature: 0.8,
         }),
       });
       const data = await response.json();
@@ -597,33 +595,21 @@ import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/
         const message = data?.error?.message || "Groq rejected the request.";
         throw new Error(message);
       }
-      const raw = data?.choices?.[0]?.message?.content;
-      let spec = null;
-      if (raw) {
-        try {
-          const json = raw.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
-          const parsed = JSON.parse(json);
-          if (parsed && typeof parsed === "object") spec = parsed;
-        } catch (error) {
-          console.warn("AI response was not valid JSON:", raw);
-        }
+      const raw = data?.choices?.[0]?.message?.content || "";
+      const generatedHtml = raw.trim().replace(/^```(?:html)?\s*/i, "").replace(/\s*```$/, "");
+      if (!/<html[\s>]/i.test(generatedHtml) || !/<body[\s>]/i.test(generatedHtml) || !/<\/html\s*>/i.test(generatedHtml)) {
+        throw new Error("The AI response was incomplete. Try again with a shorter or more specific request.");
       }
-      if (!spec || !spec.name || !Array.isArray(spec.pages) || !spec.pages.length) {
-        throw new Error("Groq returned an incomplete website. Try your prompt again.");
-      }
-      if (!spec.theme || !spec.theme.accent) spec.theme = { background: "#f3efe8", foreground: "#1d2a24", accent: "#2a7a5d", font: "DM Sans" };
-      spec.pages = spec.pages.map((page) => ({
-        name: page.name || "Home",
-        slug: page.slug || "/",
-        sections: (Array.isArray(page.sections) ? page.sections : []).map((section) => ({
-          type: section.type || "features",
-          title: section.title || "New section",
-          text: section.text || "A creative section generated from your prompt.",
-          button: section.button || "Learn more",
-        })),
-      }));
-      const project = createProject(spec.name || "AI website", prompt, "AI generated");
-      project.spec = spec;
+      const parsedDocument = new DOMParser().parseFromString(generatedHtml, "text/html");
+      const projectName = parsedDocument.title.trim() || prompt.split(/\s+/).slice(0, 4).join(" ");
+      const project = createProject(projectName, prompt, "AI generated");
+      project.spec = {
+        name: projectName,
+        description: prompt,
+        theme: { background: "#ffffff", foreground: "#111111", accent: "#297455", font: "Generated" },
+        pages: [{ name: "Home", slug: "/", sections: [] }],
+        generatedHtml,
+      };
       addVersion(project, "AI generation from browser");
       persist(); setView("editor"); toast("AI website draft created.");
     } catch (error) {
@@ -659,7 +645,7 @@ import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/
     if (target.dataset.action === "add-section") { const project = activeProject(); project.spec.pages[0].sections.push({ type: "features", title: "A new section", text: "Add a little detail to make this yours.", button: "Learn more" }); checkpoint(project); selectedSection = project.spec.pages[0].sections.length - 1; addVersion(project, "Section added"); persist(); renderEditor(); return; }
     if (target.dataset.action === "delete-section") { const project = activeProject(); if (project.spec.pages[0].sections.length <= 1) { toast("A page needs at least one section.", "error"); return; } project.spec.pages[0].sections.splice(selectedSection, 1); checkpoint(project); selectedSection = Math.max(0, selectedSection - 1); addVersion(project, "Section removed"); persist(); renderEditor(); toast("Section removed."); return; }
     if (target.dataset.action === "undo" || target.dataset.action === "redo") { changeHistory(target.dataset.action); return; }
-    if (target.dataset.action === "open-preview") { const frame = $(".preview-frame"); const newWindow = window.open("about:blank", "_blank", "noopener"); if (newWindow && frame) newWindow.document.write(frame.srcdoc); return; }
+    if (target.dataset.action === "open-preview") { const frame = $(".preview-frame"); if (frame) window.open(`data:text/html;charset=utf-8,${encodeURIComponent(frame.srcdoc)}`, "_blank", "noopener"); return; }
     if (target.dataset.action === "export-data") { const blob = new Blob([JSON.stringify({ projects: state.projects, localProjects: state.localProjects || [], assets: state.assets }, null, 2)], { type: "application/json" }); const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = "buildflow-workspace.json"; link.click(); URL.revokeObjectURL(link.href); return; }
     if (target.dataset.action === "clear-data") { if (confirm("Delete all projects and assets stored in this browser? This cannot be undone.")) { state = blankState(); persist(); setView("dashboard"); toast("Local workspace cleared."); } return; }
     if (target.dataset.action === "project-delete") { const id = target.dataset.id; const project = state.projects.find((item) => item.id === id); if (project && confirm(`Delete “${project.name}” from ${project.origin === "remote" ? "Firebase" : "this browser"}?`)) { if (project.origin === "remote" && db) { try { await deleteDoc(doc(db, "projects", id)); } catch (error) { toast(`Project could not be deleted: ${error.message}`, "error"); return; } } state.projects = state.projects.filter((item) => item.id !== id); if (state.activeId === id) state.activeId = null; persist(); render(); toast("Project deleted."); } return; }
