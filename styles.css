@@ -7,3 +7,84 @@
 .nav-link[hidden]{display:none}.auth-page{min-height:calc(100vh - 170px);display:grid;grid-template-columns:minmax(0,1fr) minmax(320px,420px);align-items:stretch;border:1px solid var(--line);border-radius:5px;overflow:hidden;background:#141a17}.auth-art{position:relative;min-height:470px;overflow:hidden;background:#24372a}.auth-art:before,.auth-art:after{content:"";position:absolute;border-radius:50%;border:1px solid #e0d6ac38}.auth-art:before{width:480px;height:480px;right:-70px;top:-45px}.auth-art:after{width:310px;height:310px;right:14px;top:39px}.auth-orbit{position:absolute;border-radius:50%;background:#c6a96f}.orbit-a{width:150px;height:150px;right:145px;top:105px}.orbit-b{width:48px;height:48px;right:86px;top:325px;background:#80a18a}.auth-art-label{position:absolute;left:32px;bottom:31px;color:#edf0e8;font:500 22px/1.2 var(--display)}.auth-art-mark{position:absolute;right:31px;bottom:29px;color:#e0d6ac;font:500 12px var(--display);letter-spacing:2px}.auth-card{align-self:center;padding:38px 32px}.auth-card h1{font:500 25px var(--display);margin:10px 0 5px}.auth-description{font-size:11px;color:#9aa69d;margin:0 0 18px}.auth-card .auth-actions{margin:17px 0 10px}.auth-card .auth-actions .button{flex:1}.auth-reset{margin-top:4px}.auth-footnote{font-size:9px;color:#818e85;margin-top:20px;padding-top:13px;border-top:1px solid var(--line)}.auth-signout{margin-top:9px}.admin-search{display:flex;gap:8px;margin:20px 0 12px}.admin-search input{width:min(330px,100%);height:34px;background:#151c18;border:1px solid #39463d;border-radius:4px;padding:0 10px;color:var(--text);font-size:10px}.admin-table-wrap{overflow:auto;border:1px solid var(--line);border-radius:4px}.admin-table{width:100%;border-collapse:collapse;text-align:left;min-width:620px}.admin-table th{padding:10px 12px;color:#8c9990;font-size:8px;letter-spacing:.6px;text-transform:uppercase;background:#18201b}.admin-table td{padding:12px;border-top:1px solid var(--line);font-size:10px;color:#c7d0c8}.admin-table td:first-child{display:grid;gap:2px}.admin-table td strong{font-size:10px;font-weight:600}.admin-table td small{font-size:8px;color:#7f8b82}.admin-empty{text-align:center;color:#8c9990!important;padding:24px!important}.role-pill{font-size:8px;text-transform:uppercase;color:#a9d8b6;border:1px solid #395b43;border-radius:3px;padding:3px 6px}.admin-pagination{display:flex;justify-content:space-between;align-items:center;margin-top:12px;font-size:9px;color:#89958d}.admin-pagination>div{display:flex;gap:7px}.admin-pagination button:disabled{opacity:.45;cursor:default}
 @media(max-width:760px){.auth-page{grid-template-columns:1fr}.auth-art{min-height:170px}.auth-art:before{width:270px;height:270px;right:-20px;top:-135px}.auth-art:after{width:185px;height:185px;right:25px;top:-92px}.orbit-a{width:77px;height:77px;right:82px;top:17px}.orbit-b{width:27px;height:27px;right:40px;top:102px}.auth-art-label{left:19px;bottom:17px;font-size:15px}.auth-art-mark{right:19px;bottom:17px}.auth-card{padding:25px 20px}.admin-pagination{align-items:flex-start;gap:10px;flex-direction:column}.admin-search input{flex:1}}
 .field-label[hidden]{display:none}
+
+@media(max-width:900px){
+	.sidebar{transform:translateX(-100%);transition:transform .2s;box-shadow:12px 0 30px #0005}
+	.sidebar.sidebar-open{transform:translateX(0)}
+	.main-area{margin-left:0}
+	.menu-button{display:inline-grid}
+}
+
+@media(max-width:760px){
+	.main-area,.content{width:100%;min-width:0}
+	.welcome-row{flex-wrap:wrap;align-items:flex-start;gap:12px}
+	.welcome-row>div,.page-heading>div{min-width:0}
+	.welcome-row>.button{margin-top:0}
+	.prompt-bar{width:100%;min-width:0}
+	.prompt-hints{display:flex;flex-wrap:wrap;gap:6px}
+	.page-heading{flex-wrap:wrap}
+	.page-heading .heading-actions{width:100%;flex-wrap:wrap}
+	.toolbar-row,.admin-search{width:100%;flex-wrap:wrap}
+	.admin-search input{min-width:0}
+	.editor-topline{flex-wrap:wrap;gap:8px}
+	.editor-topline>div:first-child{min-width:0;flex-wrap:wrap}
+	.editor-actions{min-width:0;flex-wrap:wrap}
+	.editor-layout{overflow-x:hidden}
+	.canvas-area,.canvas-outer,.editor-right{min-width:0;max-width:100%}
+	.canvas-outer,.admin-table-wrap{overflow-x:auto;overscroll-behavior-x:contain}
+	.preview-frame-wrap{width:100%;min-width:0}
+	.modal-backdrop{padding:12px}
+	.modal{max-height:calc(100dvh - 24px)}
+}
+
+@media(max-width:480px){
+	.topbar{gap:6px;padding-inline:12px}
+	.breadcrumb{min-width:0;overflow:hidden;gap:5px}
+	.breadcrumb>span:first-child,.crumb-divider{display:none}
+	.breadcrumb strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+	.topbar-actions{gap:4px}
+	.connection-status{display:none}
+	.content{padding:21px 14px 34px}
+	.welcome-row{flex-direction:column;gap:8px}
+	.welcome-row h1{font-size:27px}
+	.quickstart-panel{min-height:0}
+	.quickstart-content{width:100%;padding:22px 15px}
+	.quickstart-content h2{font-size:19px}
+	.prompt-hints{max-width:100%;gap:5px}
+	.prompt-hints button{font-size:9px}
+	.page-heading{gap:12px}
+	.page-heading .heading-actions{width:100%}
+	.page-heading .button,.heading-actions .button{min-height:38px}
+	.asset-grid{grid-template-columns:minmax(0,1fr)}
+	.project-thumb{height:175px}
+	.editor-topline,.editor-layout{margin-left:-14px;margin-right:-14px}
+	.editor-topline{padding:9px 12px}
+	.editor-topline>div:first-child,.editor-actions{width:100%}
+	.editor-actions{justify-content:space-between}
+	.editor-actions .button{min-height:34px;font-size:10px}
+	.canvas-area{min-height:420px}
+	.site-nav{height:auto;min-height:50px;flex-wrap:wrap;gap:8px;padding:8px 5%}
+	.site-nav span{font-size:9px}
+	.site-nav button{font-size:10px}
+	.site-section{padding:32px 7%}
+	.preview-frame-wrap{height:65vh;min-height:320px;padding:6px}
+	.auth-card{padding:24px 17px}
+	.admin-metrics{grid-template-columns:1fr}
+}
+
+@media(max-width:360px){
+	.topbar{padding-inline:8px}
+	.content{padding-inline:11px}
+	.editor-topline,.editor-layout{margin-left:-11px;margin-right:-11px}
+	.topbar-avatar{width:25px;height:25px}
+	.breadcrumb{font-size:10px}
+	.welcome-row h1{font-size:25px}
+	.quickstart-content{padding-inline:12px}
+	.prompt-bar{gap:6px;padding-left:9px}
+	.editor-actions{gap:3px}
+	.viewport-button{width:27px}
+	.editor-actions .button{padding-inline:6px}
+	.auth-actions{gap:6px}
+	.auth-card{padding-inline:14px}
+	.admin-pagination>div{display:flex;flex-wrap:wrap;gap:6px}
+}
