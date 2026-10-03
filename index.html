@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#101513" />
+    <meta name="description" content="BuildFlow turns your ideas into editable, publishable websites." />
+    <title>BuildFlow — Your website workshop</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+    <script src="config.js"></script>
+    <script type="module" src="app.js"></script>
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" id="sidebar">
+        <a class="brand" href="#dashboard" aria-label="BuildFlow home"><span class="brand-mark">B<span>F</span></span><span>buildflow</span></a>
+        <div class="workspace-label">WORKSPACE <span class="workspace-dot"></span></div>
+        <nav class="main-nav" aria-label="Main navigation">
+          <button class="nav-link active" data-view="dashboard"><span class="nav-icon">⌂</span>Overview</button>
+          <button class="nav-link" data-view="projects"><span class="nav-icon">▤</span>Projects <span class="nav-count" id="project-count">0</span></button>
+          <button class="nav-link" data-view="templates"><span class="nav-icon">▦</span>Templates</button>
+          <button class="nav-link" data-view="assets"><span class="nav-icon">▧</span>Assets</button>
+          <button class="nav-link" data-view="versions"><span class="nav-icon">◷</span>Version history</button>
+          <button class="nav-link" id="account-link" data-view="auth"><span class="nav-icon">◎</span>Log in / sign up</button>
+        </nav>
+        <div class="sidebar-divider"></div>
+        <div class="workspace-label">TOOLS</div>
+        <nav class="main-nav" aria-label="Tools">
+          <button class="nav-link" data-view="assistant"><span class="nav-icon">✳</span>AI assistant <span class="nav-tag">AI</span></button>
+          <button class="nav-link" id="admin-link" data-view="admin" hidden><span class="nav-icon">▥</span>Admin</button>
+        </nav>
+        <div class="sidebar-spacer"></div>
+        <div class="plan-card"><div class="plan-card-title"><span class="plan-indicator"></span>Local workspace</div><p>Your projects stay in this browser until you connect Firebase.</p><button class="text-button" data-view="settings">Connect a backend <span>→</span></button></div>
+        <button class="profile-button" data-view="settings"><span class="avatar">B</span><span class="profile-copy"><strong id="profile-name">My workspace</strong><small id="profile-email">Local mode</small></span><span class="profile-menu">···</span></button>
+      </aside>
+
+      <main class="main-area">
+        <header class="topbar">
+          <button class="icon-button menu-button" id="menu-button" aria-label="Toggle navigation">☰</button>
+          <div class="breadcrumb"><span>Workspace</span><span class="crumb-divider">/</span><strong id="breadcrumb-current">Overview</strong></div>
+          <div class="topbar-actions"><span class="connection-status" id="connection-status"><i></i> Local only</span><button class="icon-button search-button" id="search-button" title="Search projects">⌕</button><button class="topbar-avatar" data-view="settings">B</button></div>
+        </header>
+        <div class="content" id="content"></div>
+      </main>
+    </div>
+
+    <div class="modal-backdrop" id="modal-backdrop" hidden>
+      <section class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+        <button class="modal-close icon-button" id="modal-close" aria-label="Close dialog">×</button>
+        <div id="modal-content"></div>
+      </section>
+    </div>
+    <div class="toast-region" id="toast-region" aria-live="polite"></div>
+    <input id="asset-input" type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden />
+  </body>
+</html>
