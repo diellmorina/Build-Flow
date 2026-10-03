@@ -4,7 +4,6 @@
     "ignore": [
       "firebase.json",
       "firestore.rules",
-      "storage.rules",
       "README.md",
       ".gitignore",
       "package.json",
@@ -17,9 +16,6 @@
   },
   "firestore": {
     "rules": "firestore.rules"
-  },
-  "storage": {
-    "rules": "storage.rules"
   },
   "functions": {
     "source": "functions"

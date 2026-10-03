@@ -1,12 +1,12 @@
 # BuildFlow
 
-A no-build HTML, CSS, and JavaScript website-builder workspace with Firebase Authentication, Cloud Firestore, Firebase Storage, Cloud Functions, and Firebase Hosting integration.
+A no-build HTML, CSS, and JavaScript website-builder workspace with Firebase Authentication, Cloud Firestore, Cloud Functions, and Firebase Hosting integration.
 
 ## Current capabilities
 
 - Create and edit structured website drafts, with local browser storage when Firebase is not configured.
 - Firebase email/password signup, verified email login, logout, password reset, and profile storage.
-- Owner-scoped Firestore project persistence and Firebase Storage image uploads.
+- Owner-scoped Firestore project persistence and local image uploads.
 - Private administrator directory with account creation dates and last-active activity.
 - Server-side structured AI generation through a callable Cloud Function.
 - Sandboxed website preview, starter templates, bounded history, and local workspace export.
@@ -17,7 +17,7 @@ Starter drafts are deterministic and are not presented as AI output. Publishing 
 
 1. Create a Firebase project. Register a Web app in **Project settings → General → Your apps** and copy its web configuration into `config.js`. These web config values identify the project; never put Admin SDK service-account credentials or AI keys in browser files.
 2. Under **Authentication → Sign-in method**, enable **Email/Password**. Under **Authentication → Settings → Authorized domains**, add `localhost` and your Firebase Hosting domain.
-3. Create a **Cloud Firestore** database and enable **Storage** in the Firebase console.
+3. Create a **Cloud Firestore** database in the Firebase console.
 4. Install or run the Firebase CLI, sign in, and select your Firebase project from this workspace:
 
 	```powershell
@@ -25,10 +25,10 @@ Starter drafts are deterministic and are not presented as AI output. Publishing 
 	npx firebase-tools use --add
 	```
 
-5. Deploy the Firestore and Storage security rules and Firebase Hosting:
+5. Deploy the Firestore security rules and Firebase Hosting:
 
 	```powershell
-	npx firebase-tools deploy --only firestore:rules,storage,hosting
+	npx firebase-tools deploy --only firestore:rules,hosting
 	```
 
 6. To use cloud projects, activity tracking, and the admin directory, install the Cloud Function dependencies and deploy the non-AI functions:

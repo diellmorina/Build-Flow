@@ -1,7 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 import { createUserWithEmailAndPassword, getAuth, onAuthStateChanged, sendEmailVerification, sendPasswordResetEmail, signInWithEmailAndPassword, signOut, updateProfile } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
 import { collection, deleteDoc, doc, getDoc, getDocs, getFirestore, query, serverTimestamp, setDoc, where } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
-import { deleteObject, getDownloadURL, getStorage, ref, uploadBytes } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-storage.js";
 import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-functions.js";
 
 (() => {
@@ -24,7 +23,6 @@ import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/
   let firebaseApp = null;
   let auth = null;
   let db = null;
-  let storage = null;
   let functions = null;
   let session = null;
   let isAdmin = false;
@@ -207,7 +205,7 @@ import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/
       <section class="quickstart-panel"><div class="quickstart-art" aria-hidden="true"><div class="art-sun"></div><div class="art-hill art-hill-back"></div><div class="art-hill art-hill-front"></div><div class="art-path"></div><span class="art-star">✳</span><span class="art-dot dot-one"></span><span class="art-dot dot-two"></span></div><div class="quickstart-content"><span class="quickstart-kicker">A GOOD PLACE TO START</span><h2>What are you imagining?</h2><p>Describe a website and start with an editable draft.</p><form id="quickstart-form" class="prompt-bar"><span class="prompt-spark">✳</span><input id="quickstart-prompt" name="prompt" placeholder="A ceramics studio with a quiet, earthy feel..." aria-label="Describe your website" required /><button class="prompt-submit" aria-label="Create project">→</button></form><div class="prompt-hints"><span>Try:</span><button type="button" data-prompt="A warm bakery with a daily menu">bakery</button><button type="button" data-prompt="A portfolio for an editorial photographer">photography portfolio</button><button type="button" data-prompt="A clean landing page for a new productivity app">SaaS landing page</button></div></div></section>
       <section class="section-heading"><div><div class="eyebrow">YOUR WORK</div><h2>Recent projects <span class="heading-count">${state.projects.length}</span></h2></div><button class="text-button" data-view="projects">All projects <span>→</span></button></section>
       ${projects.length ? `<div class="project-grid">${projects.map(projectCard).join("")}</div>` : `<div class="empty-state"><div class="empty-icon">↗</div><h3>Your next idea starts here.</h3><p>Create a first draft, then edit its content and style in your workspace.</p><button class="button button-secondary" data-action="new-project">Create your first project</button></div>`}
-      <section class="bottom-note"><span class="note-mark">i</span><div><strong>Start small, stay in control.</strong><p>Drafts are stored on this device. Connect Firebase in Settings for account-based cloud storage.</p></div><button class="text-button" data-view="settings">Setup guide <span>→</span></button></section>`;
+      <section class="bottom-note"><span class="note-mark">i</span><div><strong>Start small, stay in control.</strong><p>Drafts are stored on this device. Connect Firebase in Settings for account-based sync.</p></div><button class="text-button" data-view="settings">Setup guide <span>→</span></button></section>`;
   }
 
   function renderProjects() {
@@ -261,7 +259,7 @@ import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/
 
   function renderAssets() {
     const assets = state.assets;
-    content.innerHTML = `<section class="page-heading"><div><div class="eyebrow">PROJECT LIBRARY</div><h1>Assets</h1><p>Images you’ve added to this workspace.</p></div><button class="button button-primary" data-action="upload-asset">＋ Upload image</button></section><div class="asset-note">${session ? "Images upload to your private Firebase Storage folder." : "Local images stay in this browser until you sign in with Firebase."}</div>${assets.length ? `<div class="asset-grid">${assets.map((asset, index) => `<article class="asset-card"><img src="${asset.data}" alt="${escapeHtml(asset.name)}" /><div><strong>${escapeHtml(asset.name)}</strong><span>${(asset.size / 1024).toFixed(0)} KB · ${relativeDate(asset.createdAt)}</span></div><button class="icon-button" data-delete-asset="${index}" aria-label="Delete ${escapeHtml(asset.name)}" ${asset.storagePath ? `data-storage-path="${escapeHtml(asset.storagePath)}"` : ""}>×</button></article>`).join("")}</div>` : `<div class="empty-state"><div class="empty-icon">▧</div><h3>Your library is ready.</h3><p>Upload a small image to keep it handy while you work.</p><button class="button button-secondary" data-action="upload-asset">Choose an image</button></div>`}`;
+    content.innerHTML = `<section class="page-heading"><div><div class="eyebrow">PROJECT LIBRARY</div><h1>Assets</h1><p>Images you’ve added to this workspace.</p></div><button class="button button-primary" data-action="upload-asset">＋ Upload image</button></section><div class="asset-note">${session ? "Images stay with your Firebase account data and your local browser copy." : "Local images stay in this browser until you sign in with Firebase."}</div>${assets.length ? `<div class="asset-grid">${assets.map((asset, index) => `<article class="asset-card"><img src="${asset.data}" alt="${escapeHtml(asset.name)}" /><div><strong>${escapeHtml(asset.name)}</strong><span>${(asset.size / 1024).toFixed(0)} KB · ${relativeDate(asset.createdAt)}</span></div><button class="icon-button" data-delete-asset="${index}" aria-label="Delete ${escapeHtml(asset.name)}">×</button></article>`).join("")}</div>` : `<div class="empty-state"><div class="empty-icon">▧</div><h3>Your library is ready.</h3><p>Upload a small image to keep it handy while you work.</p><button class="button button-secondary" data-action="upload-asset">Choose an image</button></div>`}`;
   }
 
   function renderVersions() {
@@ -321,7 +319,7 @@ import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/
   function renderSettings() {
     const config = window.BUILDFLOW_CONFIG || {};
     const configured = isFirebaseConfigured();
-    content.innerHTML = `<section class="page-heading"><div><div class="eyebrow">WORKSPACE PREFERENCES</div><h1>Settings</h1><p>Connect services when you’re ready to move beyond local drafts.</p></div></section><section class="settings-section"><div class="settings-heading"><div><h2>Account & storage</h2><p>Firebase provides authentication, Firestore project storage, and private Storage uploads.</p></div><span class="status-pill ${configured ? "status-ready" : ""}">${configured ? "CONFIGURED" : "SETUP NEEDED"}</span></div><div class="setup-steps"><div><span>01</span><p>Create a Firebase project and enable Firestore, Authentication, and Storage.</p></div><div><span>02</span><p>Register a web app and put its Firebase config in <code>config.js</code>.</p></div><div><span>03</span><p>Deploy <code>firestore.rules</code> and <code>storage.rules</code> from this workspace.</p></div><div><span>04</span><p>Deploy the included Cloud Functions for admin access and server-side AI.</p></div></div>${configured ? `<div class="auth-actions">${session ? `<span>Signed in as ${escapeHtml(session.email)}</span><button class="button button-outline" data-action="logout">Sign out</button>` : `<button class="button button-primary" data-action="login">Sign in / create account</button>`}</div>` : `<div class="config-callout">Firebase is not configured. The editor continues to save local drafts in this browser.</div>`}</section><section class="settings-section"><div class="settings-heading"><div><h2>Publishing</h2><p>Live deployment requires a configured deployment provider and secure server integration.</p></div><span class="status-pill">NOT CONFIGURED</span></div><div class="config-callout">Publishing is unavailable in this workspace. No deployment URL will be shown until a real deployment succeeds.</div></section><section class="settings-section danger-section"><div class="settings-heading"><div><h2>Local workspace data</h2><p>Export a copy of your local projects or clear data stored in this browser.</p></div></div><div class="settings-actions"><button class="button button-outline" data-action="export-data">Export workspace JSON</button><button class="button button-danger-outline" data-action="clear-data">Clear local workspace</button></div></section>`;
+    content.innerHTML = `<section class="page-heading"><div><div class="eyebrow">WORKSPACE PREFERENCES</div><h1>Settings</h1><p>Connect services when you’re ready to move beyond local drafts.</p></div></section><section class="settings-section"><div class="settings-heading"><div><h2>Account & cloud sync</h2><p>Firebase provides authentication and Firestore project storage without a separate Storage service.</p></div><span class="status-pill ${configured ? "status-ready" : ""}">${configured ? "CONFIGURED" : "SETUP NEEDED"}</span></div><div class="setup-steps"><div><span>01</span><p>Create a Firebase project and enable Firestore and Authentication.</p></div><div><span>02</span><p>Register a web app and put its Firebase config in <code>config.js</code>.</p></div><div><span>03</span><p>Deploy <code>firestore.rules</code> from this workspace.</p></div><div><span>04</span><p>Deploy the included Cloud Functions for admin access and server-side AI.</p></div></div>${configured ? `<div class="auth-actions">${session ? `<span>Signed in as ${escapeHtml(session.email)}</span><button class="button button-outline" data-action="logout">Sign out</button>` : `<button class="button button-primary" data-action="login">Sign in / create account</button>`}</div>` : `<div class="config-callout">Firebase is not configured. The editor continues to save local drafts in this browser.</div>`}</section><section class="settings-section"><div class="settings-heading"><div><h2>Publishing</h2><p>Live deployment requires a configured deployment provider and secure server integration.</p></div><span class="status-pill">NOT CONFIGURED</span></div><div class="config-callout">Publishing is unavailable in this workspace. No deployment URL will be shown until a real deployment succeeds.</div></section><section class="settings-section danger-section"><div class="settings-heading"><div><h2>Local workspace data</h2><p>Export a copy of your local projects or clear data stored in this browser.</p></div></div><div class="settings-actions"><button class="button button-outline" data-action="export-data">Export workspace JSON</button><button class="button button-danger-outline" data-action="clear-data">Clear local workspace</button></div></section>`;
   }
 
   function renderPreview() {
@@ -389,7 +387,6 @@ import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/
     firebaseApp = initializeApp(firebaseConfig);
     auth = getAuth(firebaseApp);
     db = getFirestore(firebaseApp);
-    storage = getStorage(firebaseApp);
     functions = getFunctions(firebaseApp, firebaseConfig.functionsRegion || "us-central1");
     currentView = "auth";
     onAuthStateChanged(auth, async (user) => {
@@ -399,19 +396,18 @@ import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/
       updateChrome();
       if (session) {
         state.localProjects = [...(state.localProjects || []), ...state.projects.filter((project) => project.origin !== "remote")];
-        state.localAssets = [...(state.localAssets || []), ...state.assets.filter((asset) => !asset.storagePath)];
         state.localProjects = [...new Map(state.localProjects.map((project) => [project.id, project])).values()];
         state.localAssets = [...new Map(state.localAssets.map((asset) => [asset.id || asset.name, asset])).values()];
         state.projects = [];
         state.assets = [];
         currentView = session.emailVerified ? "dashboard" : "auth";
-        const tasks = [loadRemoteProjects(), loadRemoteAssets(), refreshOwnRole()];
+        const tasks = [loadRemoteProjects(), refreshOwnRole()];
         if (session.emailVerified) tasks.push(touchLastActive());
         await Promise.all(tasks);
       } else {
         isAdmin = false;
         state.projects = [...(state.localProjects || []), ...state.projects.filter((project) => project.origin !== "remote")];
-        state.assets = [...(state.localAssets || []), ...state.assets.filter((asset) => !asset.storagePath)];
+        state.assets = [...(state.localAssets || [])];
         currentView = "auth";
         updateChrome();
         render();
@@ -452,21 +448,6 @@ import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     updateChrome(); render();
     } catch (error) { toast(`Could not load Firebase projects: ${error.message}`, "error"); }
-  }
-
-  async function loadRemoteAssets() {
-    if (!db || !session) return;
-    try {
-      const snapshot = await getDocs(query(collection(db, "assets"), where("ownerId", "==", session.uid)));
-      state.localAssets = [...(state.localAssets || []), ...state.assets.filter((asset) => !asset.storagePath)];
-      state.localAssets = [...new Map(state.localAssets.map((asset) => [asset.id || asset.name, asset])).values()];
-      state.assets = snapshot.docs.map((assetDoc) => {
-        const asset = assetDoc.data();
-        return { id: assetDoc.id, name: asset.name, size: asset.sizeBytes, data: asset.downloadUrl, storagePath: asset.storagePath, createdAt: timestampToIso(asset.createdAt) };
-      });
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-      if (currentView === "assets") renderAssets();
-    } catch (error) { toast(`Could not load Firebase assets: ${error.message}`, "error"); }
   }
 
   async function syncActiveProject() {
@@ -592,7 +573,7 @@ import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/
     if (target.dataset.selectSection !== undefined) { selectedSection = Number(target.dataset.selectSection); renderEditor(); return; }
     if (target.dataset.width) { previewWidth = target.dataset.width; renderEditor(); return; }
     if (target.dataset.restoreVersion) { if (confirm("Restore this version? Your current draft will be kept as a new version.")) restoreVersion(target.dataset.restoreVersion); return; }
-    if (target.dataset.deleteAsset !== undefined) { const asset = state.assets[Number(target.dataset.deleteAsset)]; if (asset?.storagePath && storage && db) { try { await deleteObject(ref(storage, asset.storagePath)); await deleteDoc(doc(db, "assets", asset.id)); } catch (error) { toast(`Image could not be deleted: ${error.message}`, "error"); return; } } else state.localAssets = (state.localAssets || []).filter((item) => item !== asset); state.assets.splice(Number(target.dataset.deleteAsset), 1); persist(); renderAssets(); toast("Image removed."); return; }
+    if (target.dataset.deleteAsset !== undefined) { const asset = state.assets[Number(target.dataset.deleteAsset)]; state.localAssets = (state.localAssets || []).filter((item) => item !== asset); state.assets.splice(Number(target.dataset.deleteAsset), 1); persist(); renderAssets(); toast("Image removed."); return; }
     if (target.dataset.prompt) { newProjectModal(target.dataset.prompt); return; }
   });
 
@@ -656,25 +637,9 @@ import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/
     if (!file) return;
     const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
     if (!allowedTypes.includes(file.type) || file.size > LIMITS.assetBytes) { toast("Choose a JPG, PNG, WebP, or GIF image under 3 MB.", "error"); event.target.value = ""; return; }
-    if (session && storage && db) {
-      const fileName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-      const storagePath = `users/${session.uid}/assets/${crypto.randomUUID()}-${fileName}`;
-      (async () => {
-        try {
-          const assetRef = ref(storage, storagePath);
-          await uploadBytes(assetRef, file, { contentType: file.type });
-          const downloadUrl = await getDownloadURL(assetRef);
-          const id = crypto.randomUUID();
-          await setDoc(doc(db, "assets", id), { ownerId: session.uid, name: file.name, sizeBytes: file.size, downloadUrl, storagePath, createdAt: serverTimestamp() });
-          state.assets.unshift({ id, name: file.name, size: file.size, data: downloadUrl, storagePath, createdAt: new Date().toISOString() });
-          persist(); renderAssets(); toast("Image uploaded to Firebase Storage.");
-        } catch (error) { toast(`Firebase upload failed: ${error.message}`, "error"); }
-      })();
-    } else {
-      const reader = new FileReader();
-      reader.onload = () => { const asset = { id: crypto.randomUUID(), name: file.name, size: file.size, data: reader.result, createdAt: new Date().toISOString() }; state.localAssets ||= []; state.localAssets.unshift(asset); state.assets.unshift(asset); try { persist(); renderAssets(); toast("Image added to your local library."); } catch { toast("The image could not be saved. Try a smaller file.", "error"); } };
-      reader.readAsDataURL(file);
-    }
+    const reader = new FileReader();
+    reader.onload = () => { const asset = { id: crypto.randomUUID(), name: file.name, size: file.size, data: reader.result, createdAt: new Date().toISOString() }; state.localAssets ||= []; state.localAssets.unshift(asset); state.assets.unshift(asset); try { persist(); renderAssets(); toast("Image added to your local library."); } catch { toast("The image could not be saved. Try a smaller file.", "error"); } };
+    reader.readAsDataURL(file);
     event.target.value = "";
   });
 

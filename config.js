@@ -3,7 +3,6 @@ window.BUILDFLOW_CONFIG = {
   apiKey: "AIzaSyCOnYO0sKuooDv_6LwUNgSF7O52hdTZ0Uo",
   authDomain: "buildflow-21aa7.firebaseapp.com",
   projectId: "buildflow-21aa7",
-  storageBucket: "buildflow-21aa7.firebasestorage.app",
   messagingSenderId: "418151491343",
   appId: "1:418151491343:web:e41b3c3678eb0ee794007a",
   measurementId: "G-69KT747ZFV",
