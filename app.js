@@ -182,6 +182,14 @@ import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/
   function render() {
     const routes = { dashboard: renderDashboard, projects: renderProjects, templates: renderTemplates, assets: renderAssets, versions: renderVersions, assistant: renderAssistant, admin: renderAdmin, settings: renderSettings, editor: renderEditor, preview: renderPreview, auth: renderAuth };
     (routes[currentView] || renderDashboard)();
+    const googleButton = currentView === "auth" ? content.querySelector('[data-action="google-signin"]') : null;
+    if (googleButton) {
+      googleButton.innerHTML = `<svg class="google-mark" viewBox="0 0 48 48" aria-hidden="true"><path fill="#4285F4" d="M43.6 24.5c0-1.4-.1-2.7-.4-4H24v7.6h11c-.5 2.5-2 4.6-4.2 6v5h6.8c4-3.7 6-9 6-14.6z"/><path fill="#34A853" d="M24 44c5.5 0 10.1-1.8 13.5-4.9l-6.8-5c-1.8 1.2-4 1.9-6.7 1.9-5.1 0-9.4-3.4-10.9-8H6.1v5.2C9.4 39.6 16.1 44 24 44z"/><path fill="#FBBC05" d="M13.1 28c-.4-1.2-.7-2.6-.7-4s.3-2.8.7-4V14.8H6.1C4.8 17.5 4 20.6 4 24s.8 6.5 2.1 9.2l7-5.2z"/><path fill="#EA4335" d="M24 12c3 0 5.7 1 7.8 3l5.8-5.8C34.1 5.9 29.5 4 24 4c-7.9 0-14.6 4.4-17.9 10.8l7 5.2c1.5-4.6 5.8-8 10.9-8z"/></svg><span>Continue with Google</span>`;
+    }
+    const googleMark = googleButton?.querySelector(".google-mark");
+    googleMark?.setAttribute("width", "18");
+    googleMark?.setAttribute("height", "18");
+    if (googleMark) googleMark.style.verticalAlign = "middle";
   }
 
   function relativeDate(date) {
