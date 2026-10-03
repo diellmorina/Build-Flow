@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
-import { createUserWithEmailAndPassword, getAuth, onAuthStateChanged, sendEmailVerification, sendPasswordResetEmail, signInWithEmailAndPassword, signOut, updateProfile } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+import { createUserWithEmailAndPassword, getAuth, GoogleAuthProvider, onAuthStateChanged, sendEmailVerification, sendPasswordResetEmail, signInWithEmailAndPassword, signInWithPopup, signOut, updateProfile } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
 import { collection, deleteDoc, doc, getDoc, getDocs, getFirestore, query, serverTimestamp, setDoc, where } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-functions.js";
 
@@ -7,6 +7,7 @@ import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/
   "use strict";
 
   const STORAGE_KEY = "buildflow.workspace.v1";
+  const GROQ_API_KEY = "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";
   const LIMITS = { history: 30, assetBytes: 3 * 1024 * 1024 };
   const examples = [
     { name: "Northline Studio", category: "Portfolio", tone: "An independent design practice" },
@@ -202,7 +203,7 @@ import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/
   function renderDashboard() {
     const projects = state.projects.slice(0, 3);
     content.innerHTML = `<section class="welcome-row"><div><div class="eyebrow"><span class="eyebrow-line"></span>YOUR WORKSPACE</div><h1>Good ideas deserve<br /><span>a place to grow.</span></h1><p class="welcome-copy">Shape your next website, one thoughtful decision at a time.</p></div><button class="button button-primary" data-action="new-project"><span>＋</span> New project</button></section>
-      <section class="quickstart-panel"><div class="quickstart-art" aria-hidden="true"><div class="art-sun"></div><div class="art-hill art-hill-back"></div><div class="art-hill art-hill-front"></div><div class="art-path"></div><span class="art-star">✳</span><span class="art-dot dot-one"></span><span class="art-dot dot-two"></span></div><div class="quickstart-content"><span class="quickstart-kicker">A GOOD PLACE TO START</span><h2>What are you imagining?</h2><p>Describe a website and start with an editable draft.</p><form id="quickstart-form" class="prompt-bar"><span class="prompt-spark">✳</span><input id="quickstart-prompt" name="prompt" placeholder="A ceramics studio with a quiet, earthy feel..." aria-label="Describe your website" required /><button class="prompt-submit" aria-label="Create project">→</button></form><div class="prompt-hints"><span>Try:</span><button type="button" data-prompt="A warm bakery with a daily menu">bakery</button><button type="button" data-prompt="A portfolio for an editorial photographer">photography portfolio</button><button type="button" data-prompt="A clean landing page for a new productivity app">SaaS landing page</button></div></div></section>
+      <section class="quickstart-panel"><div class="quickstart-art" aria-hidden="true"><div class="art-sun"></div><div class="art-hill art-hill-back"></div><div class="art-hill art-hill-front"></div><div class="art-path"></div><span class="art-star">✳</span><span class="art-dot dot-one"></span><span class="art-dot dot-two"></span></div><div class="quickstart-content"><span class="quickstart-kicker">A GOOD PLACE TO START</span><h2>What are you imagining?</h2><p>Describe a website and let AI build an editable first version.</p><form id="quickstart-form" class="prompt-bar"><span class="prompt-spark">✳</span><input id="quickstart-prompt" name="prompt" placeholder="A ceramics studio with a quiet, earthy feel..." aria-label="Describe your website" required /><button class="prompt-submit" aria-label="Build website with AI">→</button></form><div class="prompt-hints"><span>Try:</span><button type="button" data-prompt="A warm bakery with a daily menu">bakery</button><button type="button" data-prompt="A portfolio for an editorial photographer">photography portfolio</button><button type="button" data-prompt="A clean landing page for a new productivity app">SaaS landing page</button></div></div></section>
       <section class="section-heading"><div><div class="eyebrow">YOUR WORK</div><h2>Recent projects <span class="heading-count">${state.projects.length}</span></h2></div><button class="text-button" data-view="projects">All projects <span>→</span></button></section>
       ${projects.length ? `<div class="project-grid">${projects.map(projectCard).join("")}</div>` : `<div class="empty-state"><div class="empty-icon">↗</div><h3>Your next idea starts here.</h3><p>Create a first draft, then edit its content and style in your workspace.</p><button class="button button-secondary" data-action="new-project">Create your first project</button></div>`}
       <section class="bottom-note"><span class="note-mark">i</span><div><strong>Start small, stay in control.</strong><p>Drafts are stored on this device. Connect Firebase in Settings for account-based sync.</p></div><button class="text-button" data-view="settings">Setup guide <span>→</span></button></section>`;
@@ -226,7 +227,7 @@ import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/
   ];
 
   function renderTemplates() {
-    content.innerHTML = `<section class="page-heading"><div><div class="eyebrow">THE STARTING LINE</div><h1>Templates</h1><p>Built-in starting points. Make them yours.</p></div></section><div class="template-grid">${templateData.map((template, index) => `<article class="template-card"><div class="template-preview" style="--template-bg:${template.colors[0]};--template-accent:${template.colors[1]}"><div class="template-mini-nav"><b>${template.mark}</b><span>ABOUT　 WORK　 CONTACT</span></div><div class="template-mini-copy"><small>${template.category.toUpperCase()}</small><strong>${escapeHtml(template.name)}</strong><i></i></div><div class="template-mini-block"><span></span><span></span><span></span></div></div><div class="template-meta"><div><span class="category-label">${template.category}</span><h3>${template.name}</h3><p>${template.description}</p></div><button class="button button-small button-outline" data-use-template="${index}">Use template</button></div></article>`).join("")}</div>`;
+    setView("assistant");
   }
 
   function renderEditor() {
@@ -268,8 +269,17 @@ import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/
     content.innerHTML = `<section class="page-heading"><div><div class="eyebrow">PROJECT HISTORY</div><h1>Version history</h1><p>Restore a saved snapshot without losing the current draft.</p></div>${project ? `<button class="button button-primary" data-action="save-version">＋ Save version</button>` : ""}</section>${project ? `<div class="history-project">Current project <strong>${escapeHtml(project.name)}</strong></div>${versions.length ? `<div class="version-list">${versions.map((version, index) => `<article class="version-row"><span class="version-number">v${versions.length - index}</span><div class="version-info"><strong>${escapeHtml(version.label)}</strong><span>${new Date(version.createdAt).toLocaleString()}</span></div><button class="button button-small button-outline" data-restore-version="${version.id}">Restore</button></article>`).join("")}</div>` : `<div class="empty-state"><h3>No saved versions yet.</h3><p>Save a project version from the editor to keep a restore point.</p><button class="button button-secondary" data-view="editor">Open editor</button></div>`}` : `<div class="empty-state"><h3>Choose a project first.</h3><p>Version history belongs to an individual project.</p><button class="button button-secondary" data-view="projects">Browse projects</button></div>`}`;
   }
 
+  function getAiApiKey() {
+    try { return localStorage.getItem("buildflow.openaiKey") || ""; } catch { return ""; }
+  }
+
+  function setAiApiKey(value) {
+    try { localStorage.setItem("buildflow.openaiKey", value); } catch (error) { console.warn("Could not store OpenAI key locally:", error); }
+  }
+
   function renderAssistant() {
-    content.innerHTML = `<section class="page-heading"><div><div class="eyebrow">A USEFUL TOOL, WHEN CONNECTED</div><h1>AI assistant</h1><p>Secure AI generation runs through a callable Firebase Cloud Function.</p></div></section><div class="integration-panel"><div class="integration-icon">✳</div><div><h2>AI provider setup needed</h2><p>Deploy the Firebase function and configure its OpenAI secret to generate real site specifications.</p><button class="button button-secondary" data-view="settings">View setup requirements</button></div><span class="status-pill">NOT CONFIGURED</span></div>${activeProject() ? `<div class="assistant-form"><label class="field-label">Ask for a website draft<input id="ai-prompt" placeholder="Build a modern bakery site with a seasonal menu..." /></label><button class="button button-primary" data-action="generate-ai">Generate with AI</button><p>Generation stays unavailable until Firebase and the server-side AI secret are configured.</p></div>` : ""}`;
+    const savedKey = getAiApiKey() || GROQ_API_KEY;
+    content.innerHTML = `<section class="page-heading"><div><div class="eyebrow">AI WEBSITE BUILDER</div><h1>AI assistant</h1><p>Use your Groq key in the browser to generate a real custom website from your prompt.</p></div></section><div class="integration-panel"><div class="integration-icon">✳</div><div><h2>Browser-based AI</h2><p>This version works without Node or Firebase Functions. The Groq key is ready below and generates a custom site from text.</p></div><span class="status-pill status-ready">DEMO MODE</span></div>${activeProject() ? `<div class="assistant-form"><label class="field-label">Groq API key<input id="ai-key" type="password" value="${escapeHtml(savedKey)}" placeholder="gsk-..." /></label><label class="field-label">Ask for a website draft<input id="ai-prompt" placeholder="Build a modern bakery site with a seasonal menu..." /></label><button class="button button-primary" data-action="generate-ai">Generate with AI</button><p>For school projects only. This key is stored in your browser and is not production-safe.</p></div>` : ""}`;
   }
 
   function renderAdmin() {
@@ -313,7 +323,7 @@ import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/
 
   function renderAuth() {
     const configured = isFirebaseConfigured();
-    content.innerHTML = `<section class="auth-page"><div class="auth-art"><span class="auth-orbit orbit-a"></span><span class="auth-orbit orbit-b"></span><span class="auth-art-label">MAKE ROOM FOR<br />YOUR NEXT IDEA.</span><span class="auth-art-mark">BF</span></div><div class="auth-card"><div class="eyebrow">BUILD FLOW WORKSPACE</div>${session ? `<h1>Your workspace, yours.</h1><p class="auth-description">Signed in as ${escapeHtml(session.email)}.</p><button class="button button-primary full-width" data-view="dashboard">Continue to workspace →</button><button class="button button-outline full-width auth-signout" data-action="logout">Sign out</button>` : `<h1>Good to have you.</h1><p class="auth-description">Sign in or create an account to keep your projects with you.</p>${!configured ? `<div class="config-callout">Add your Firebase web app config in <code>config.js</code>, then enable Email/Password in Firebase Authentication.</div>` : ""}<form id="auth-page-form"><label class="field-label">Email<input type="email" name="email" autocomplete="email" required ${configured ? "" : "disabled"} /></label><label class="field-label">Password<input type="password" name="password" minlength="8" autocomplete="current-password" required ${configured ? "" : "disabled"} /></label><label class="field-label signup-name" hidden>Display name<input type="text" name="display_name" maxlength="80" autocomplete="name" /></label><div class="auth-actions"><button class="button button-primary" type="submit" name="mode" value="login" ${configured ? "" : "disabled"}>Log in</button><button class="button button-outline" type="submit" name="mode" value="signup" ${configured ? "" : "disabled"}>Sign up</button></div><button class="text-button auth-reset" type="button" data-action="reset-auth-password" ${configured ? "" : "disabled"}>Forgot password?</button></form>`}<div class="auth-footnote">${configured ? "Firebase Authentication · Email verification is sent at signup" : "Your editable local drafts remain available without an account."}</div></div></section>`;
+    content.innerHTML = `<section class="auth-page"><div class="auth-art"><span class="auth-orbit orbit-a"></span><span class="auth-orbit orbit-b"></span><span class="auth-art-label">MAKE ROOM FOR<br />YOUR NEXT IDEA.</span><span class="auth-art-mark">BF</span></div><div class="auth-card"><div class="eyebrow">BUILD FLOW WORKSPACE</div>${session ? `<h1>Your workspace, yours.</h1><p class="auth-description">Signed in as ${escapeHtml(session.email)}.</p><button class="button button-primary full-width" data-view="dashboard">Continue to workspace →</button><button class="button button-outline full-width auth-signout" data-action="logout">Sign out</button>` : `<h1>Good to have you.</h1><p class="auth-description">Sign in or create an account to keep your projects with you.</p>${!configured ? `<div class="config-callout">Add your Firebase web app config in <code>config.js</code>, then enable Email/Password and Google Sign-In in Firebase Authentication.</div>` : ""}<div class="auth-divider"><span>or continue with</span></div><div class="auth-actions"><button class="button button-outline full-width google-login-btn" type="button" data-action="google-signin" ${configured ? "" : "disabled"}>?? Continue with Google</button></div><form id="auth-page-form"><label class="field-label">Email<input type="email" name="email" autocomplete="email" required ${configured ? "" : "disabled"} /></label><label class="field-label">Password<input type="password" name="password" minlength="8" autocomplete="current-password" required ${configured ? "" : "disabled"} /></label><label class="field-label signup-name" hidden>Display name<input type="text" name="display_name" maxlength="80" autocomplete="name" /></label><div class="auth-actions"><button class="button button-primary" type="submit" name="mode" value="login" ${configured ? "" : "disabled"}>Log in</button><button class="button button-outline" type="submit" name="mode" value="signup" ${configured ? "" : "disabled"}>Sign up</button></div><button class="text-button auth-reset" type="button" data-action="reset-auth-password" ${configured ? "" : "disabled"}>Forgot password?</button></form>`}<div class="auth-footnote">${configured ? "Firebase Authentication · Email verification is sent at signup" : "Your editable local drafts remain available without an account."}</div></div></section>`;
   }
 
   function renderSettings() {
@@ -339,7 +349,7 @@ import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/
   function closeModal() { $("#modal-backdrop").hidden = true; }
 
   function newProjectModal(initialPrompt = "") {
-    openModal(`<div class="eyebrow">A FRESH CANVAS</div><h2 id="modal-title">Start a project</h2><p class="modal-description">Create a structured starter draft you can edit right away.</p><form id="new-project-form"><label class="field-label">Project name<input name="name" placeholder="e.g. Vero Coffee" required maxlength="60" /></label><label class="field-label">What are you building?<textarea name="prompt" rows="4" placeholder="A welcoming coffee shop with a menu, location, and story..." required maxlength="1000">${escapeHtml(initialPrompt)}</textarea></label><label class="field-label">Starting point<select name="category"><option>Studio</option><option>Portfolio</option><option>Restaurant</option><option>SaaS</option><option>Agency</option><option>Barber</option><option>Fitness</option></select></label><p class="form-note">This creates a local structured draft, not an AI-generated website. Connect a backend to enable real AI.</p><button class="button button-primary full-width" type="submit">Create editable draft →</button></form>`);
+    openModal(`<div class="eyebrow">A FRESH CANVAS</div><h2 id="modal-title">Start a project</h2><p class="modal-description">Create a blank editable draft. Use the AI assistant for real prompt-based website generation.</p><form id="new-project-form"><label class="field-label">Project name<input name="name" placeholder="e.g. Vero Coffee" required maxlength="60" /></label><label class="field-label">What are you building?<textarea name="prompt" rows="4" placeholder="A welcoming coffee shop with a menu, location, and story..." required maxlength="1000">${escapeHtml(initialPrompt)}</textarea></label><label class="field-label">Starting point<select name="category"><option>Studio</option><option>Portfolio</option><option>Restaurant</option><option>SaaS</option><option>Agency</option><option>Barber</option><option>Fitness</option></select></label><p class="form-note">This is a local editable draft. For AI-generated websites, open the AI assistant and add your API key.</p><button class="button button-primary full-width" type="submit">Create editable draft →</button></form>`);
   }
 
   function createFromTemplate(index) {
@@ -474,6 +484,44 @@ import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/
     }, 800);
   }
 
+  async function ensureProfileDocument(user) {
+    if (!db || !user) return;
+    const profileRef = doc(db, "profiles", user.uid);
+    const current = await getDoc(profileRef).catch(() => null);
+    if (!current || !current.exists()) {
+      await setDoc(profileRef, {
+        email: user.email || "",
+        emailNormalized: (user.email || "").toLowerCase(),
+        displayName: user.displayName || "",
+        role: "user",
+        plan: "FREE",
+        createdAt: serverTimestamp(),
+        lastActiveAt: serverTimestamp(),
+      }, { merge: true });
+    }
+  }
+
+  async function signInWithGoogle() {
+    if (!auth || !isFirebaseConfigured()) {
+      toast("Firebase must be configured before Google sign in is available.", "error");
+      setView("settings");
+      return;
+    }
+    try {
+      const provider = new GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: "select_account" });
+      const credential = await signInWithPopup(auth, provider);
+      await ensureProfileDocument(credential.user);
+      session = credential.user;
+      currentView = "dashboard";
+      await touchLastActive();
+      render();
+      toast("Signed in with Google.");
+    } catch (error) {
+      toast(error.message || "Google sign in could not complete.", "error");
+    }
+  }
+
   async function authenticate() {
     if (session) { await signOut(auth); toast("Signed out."); }
     else setView("auth");
@@ -520,20 +568,67 @@ import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/
     } catch (error) { toast(error.message || "Authentication failed.", "error"); }
   }
 
-  async function generateWithAI() {
-    if (!functions || !session) { toast("Connect Firebase and sign in before using AI generation.", "error"); setView("settings"); return; }
-    const prompt = $("#ai-prompt")?.value.trim();
+  async function generateWithAI(promptOverride = "") {
+    const prompt = promptOverride || $("#ai-prompt")?.value.trim();
+    const apiKey = $("#ai-key")?.value.trim() || getAiApiKey() || GROQ_API_KEY;
+    if (!apiKey) { toast("Add your Groq API key first.", "error"); return; }
     if (!prompt) { toast("Add a short description first.", "error"); return; }
-    toast("Requesting a structured website draft…");
+    setAiApiKey(apiKey);
+    toast("Generating your website from the prompt…");
     try {
-      const response = await httpsCallable(functions, "generateSite")({ prompt });
-      const data = response.data;
-      if (!data?.spec) throw new Error("The AI service did not return a valid site specification.");
-      const project = createProject(data.spec.name || "AI website", prompt, "AI generated");
-      project.spec = data.spec;
-      addVersion(project, `AI generation · ${data.model || "configured model"}`);
+      const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model: "llama-3.1-8b-instant",
+          messages: [
+            { role: "system", content: "You are a senior web designer. Return only valid JSON with a structure: { name, description, theme: { background, foreground, accent, font }, pages: [{ name, slug, sections: [{ type, title, text, button }] }] }. Keep the output compact but realistic. Use only valid hex colors."
+            },
+            { role: "user", content: `Generate a website for this idea: ${prompt}` }
+          ],
+          temperature: 0.8,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        const message = data?.error?.message || "Groq rejected the request.";
+        throw new Error(message);
+      }
+      const raw = data?.choices?.[0]?.message?.content;
+      let spec = null;
+      if (raw) {
+        try {
+          const json = raw.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
+          const parsed = JSON.parse(json);
+          if (parsed && typeof parsed === "object") spec = parsed;
+        } catch (error) {
+          console.warn("AI response was not valid JSON:", raw);
+        }
+      }
+      if (!spec || !spec.name || !Array.isArray(spec.pages) || !spec.pages.length) {
+        throw new Error("Groq returned an incomplete website. Try your prompt again.");
+      }
+      if (!spec.theme || !spec.theme.accent) spec.theme = { background: "#f3efe8", foreground: "#1d2a24", accent: "#2a7a5d", font: "DM Sans" };
+      spec.pages = spec.pages.map((page) => ({
+        name: page.name || "Home",
+        slug: page.slug || "/",
+        sections: (Array.isArray(page.sections) ? page.sections : []).map((section) => ({
+          type: section.type || "features",
+          title: section.title || "New section",
+          text: section.text || "A creative section generated from your prompt.",
+          button: section.button || "Learn more",
+        })),
+      }));
+      const project = createProject(spec.name || "AI website", prompt, "AI generated");
+      project.spec = spec;
+      addVersion(project, "AI generation from browser");
       persist(); setView("editor"); toast("AI website draft created.");
-    } catch (error) { toast(error.message || "The Firebase AI function could not complete this request.", "error"); }
+    } catch (error) {
+      toast(error.message || "The AI request could not complete. Check your API key or network connection.", "error");
+    }
   }
 
   function openProject(id) {
@@ -554,6 +649,7 @@ import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/
     if (target.dataset.action === "upload-asset") { $("#asset-input").click(); return; }
     if (target.dataset.action === "save-version") { saveVersion(); return; }
     if (target.dataset.action === "generate-ai") { await generateWithAI(); return; }
+    if (target.dataset.action === "google-signin") { await signInWithGoogle(); return; }
     if (target.dataset.action === "login") { if (auth) await authenticate(); else { setView("auth"); toast("Add Firebase web app settings in config.js first.", "error"); } return; }
     if (target.dataset.action === "logout") { await authenticate(); return; }
     if (target.dataset.action === "reload-admin") { adminStatus = "idle"; await loadAdminUsers(); return; }
@@ -603,11 +699,8 @@ import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/
   document.addEventListener("submit", async (event) => {
     if (event.target.id === "quickstart-form") {
       event.preventDefault();
-      const prompt = new FormData(event.target).get("prompt").toString();
-      const words = prompt.split(/\s+/).filter(Boolean);
-      const name = words.slice(0, 3).map((word) => word[0]?.toUpperCase() + word.slice(1)).join(" ").replace(/[.,!?]$/, "");
-      newProjectModal(prompt);
-      $("#new-project-form [name=name]").value = name;
+      const prompt = String(new FormData(event.target).get("prompt") || "").trim();
+      await generateWithAI(prompt);
     }
     if (event.target.id === "new-project-form") {
       event.preventDefault(); const values = new FormData(event.target);
