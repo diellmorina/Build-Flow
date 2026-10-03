@@ -273,8 +273,16 @@ import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/
     content.innerHTML = `<section class="page-heading"><div><div class="eyebrow">PROJECT HISTORY</div><h1>Version history</h1><p>Restore a saved snapshot without losing the current draft.</p></div>${project ? `<button class="button button-primary" data-action="save-version">＋ Save version</button>` : ""}</section>${project ? `<div class="history-project">Current project <strong>${escapeHtml(project.name)}</strong></div>${versions.length ? `<div class="version-list">${versions.map((version, index) => `<article class="version-row"><span class="version-number">v${versions.length - index}</span><div class="version-info"><strong>${escapeHtml(version.label)}</strong><span>${new Date(version.createdAt).toLocaleString()}</span></div><button class="button button-small button-outline" data-restore-version="${version.id}">Restore</button></article>`).join("")}</div>` : `<div class="empty-state"><h3>No saved versions yet.</h3><p>Save a project version from the editor to keep a restore point.</p><button class="button button-secondary" data-view="editor">Open editor</button></div>`}` : `<div class="empty-state"><h3>Choose a project first.</h3><p>Version history belongs to an individual project.</p><button class="button button-secondary" data-view="projects">Browse projects</button></div>`}`;
   }
 
+  function getAiApiKey() {
+    try { return localStorage.getItem("buildflow.openaiKey") || ""; } catch { return ""; }
+  }
+
+  function setAiApiKey(value) {
+    try { localStorage.setItem("buildflow.openaiKey", value); } catch (error) { console.warn("Could not store OpenAI key locally:", error); }
+  }
+
   function renderAssistant() {
-    content.innerHTML = `<section class="page-heading"><div><div class="eyebrow">AI WEBSITE BUILDER</div><h1>AI assistant</h1><p>Describe the website you want and I’ll build an editable draft.</p></div><span class="status-pill status-ready">READY</span></section><div class="assistant-form"><div class="integration-panel"><div class="integration-icon">✳</div><div><h2>What should we build?</h2><p>Tell me about the style, pages, features, and audience. I’ll turn your message into a website draft.</p></div></div><label class="field-label" for="ai-prompt">Your message<textarea id="ai-prompt" rows="5" placeholder="Build a modern bakery website with a seasonal menu, warm colors, opening hours, and an online order button..."></textarea></label><button class="button button-primary" data-action="generate-ai">Build website</button></div>`;
+    content.innerHTML = `<section class="page-heading"><div><div class="eyebrow">A USEFUL TOOL, WHEN CONNECTED</div><h1>AI assistant</h1><p>Secure AI generation runs through a callable Firebase Cloud Function.</p></div></section><div class="integration-panel"><div class="integration-icon">✳</div><div><h2>AI provider setup needed</h2><p>Deploy the Firebase function and configure its OpenAI secret to generate real site specifications.</p><button class="button button-secondary" data-view="settings">View setup requirements</button></div><span class="status-pill">NOT CONFIGURED</span></div>${activeProject() ? `<div class="assistant-form"><label class="field-label">Ask for a website draft<input id="ai-prompt" placeholder="Build a modern bakery site with a seasonal menu..." /></label><button class="button button-primary" data-action="generate-ai">Generate with AI</button><p>Generation stays unavailable until Firebase and the server-side AI secret are configured.</p></div>` : ""}`;
   }
 
   function renderAdmin() {
@@ -567,50 +575,18 @@ import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/
     } catch (error) { toast(error.message || "Authentication failed.", "error"); }
   }
 
-  async function generateWithAI(promptOverride = "") {
-    const prompt = promptOverride || $("#ai-prompt")?.value.trim();
-    const apiKey = GROQ_API_KEY;
-    if (!apiKey) { toast("The AI key is not configured in app.js.", "error"); return; }
+  async function generateWithAI() {
+    if (!functions || !session) { toast("Connect Firebase and sign in before using AI generation.", "error"); setView("settings"); return; }
+    const prompt = $("#ai-prompt")?.value.trim();
     if (!prompt) { toast("Add a short description first.", "error"); return; }
-    toast("Generating your website from the prompt…");
+    toast("Requesting a structured website draft…");
     try {
-      const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${apiKey}`,
-        },
-        body: JSON.stringify({
-            model: "openai/gpt-oss-20b",
-            max_completion_tokens: 6000,
-          messages: [
-              { role: "system", content: "You are an expert web designer and front-end developer. Build a genuinely custom, polished, responsive website based on the user's exact brief. Return only a complete standalone HTML document, from <!doctype html> through </html>, with all CSS in a style element and any needed JavaScript in a script element. Do not return JSON, markdown fences, explanations, templates, or placeholder copy. Create a distinctive layout, typography, colors, navigation, sections, and interactions suited to this specific brief. Include real copy relevant to the business and working client-side interactions. Use no frameworks, build tools, or external JavaScript libraries. Keep the code concise enough to fit in the response."
-              },
-              { role: "user", content: `Create the complete website now. Follow this brief closely:\n\n${prompt}` }
-          ],
-        }),
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        const message = data?.error?.message || "Groq rejected the request.";
-        throw new Error(message);
-      }
-      const raw = data?.choices?.[0]?.message?.content || "";
-      const generatedHtml = raw.trim().replace(/^```(?:html)?\s*/i, "").replace(/\s*```$/, "");
-      if (!/<html[\s>]/i.test(generatedHtml) || !/<body[\s>]/i.test(generatedHtml) || !/<\/html\s*>/i.test(generatedHtml)) {
-        throw new Error("The AI response was incomplete. Try again with a shorter or more specific request.");
-      }
-      const parsedDocument = new DOMParser().parseFromString(generatedHtml, "text/html");
-      const projectName = parsedDocument.title.trim() || prompt.split(/\s+/).slice(0, 4).join(" ");
-      const project = createProject(projectName, prompt, "AI generated");
-      project.spec = {
-        name: projectName,
-        description: prompt,
-        theme: { background: "#ffffff", foreground: "#111111", accent: "#297455", font: "Generated" },
-        pages: [{ name: "Home", slug: "/", sections: [] }],
-        generatedHtml,
-      };
-      addVersion(project, "AI generation from browser");
+      const response = await httpsCallable(functions, "generateSite")({ prompt });
+      const data = response.data;
+      if (!data?.spec) throw new Error("The AI service did not return a valid site specification.");
+      const project = createProject(data.spec.name || "AI website", prompt, "AI generated");
+      project.spec = data.spec;
+      addVersion(project, `AI generation · ${data.model || "configured model"}`);
       persist(); setView("editor"); toast("AI website draft created.");
     } catch (error) {
       toast(error.message || "The AI request could not complete. Check your API key or network connection.", "error");
